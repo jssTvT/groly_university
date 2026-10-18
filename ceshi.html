@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>♟️的微信</title>
+<title>小魔女大爆炸的微信</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
   body { background: #1a1a1a; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
@@ -19,6 +19,7 @@
   .tab-view.active { display: block; }
   .chat-item { display: flex; align-items: center; padding: 12px 15px; background: #ededed; border-bottom: 1px solid #e0e0e0; cursor: pointer; }
   .chat-item:active { background: #ddd; }
+  .chat-item.pinned { background: #e2e2e2; }
   .chat-avatar { width: 48px; height: 48px; border-radius: 6px; background: #ccc; margin-right: 12px; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 18px; font-weight: bold; flex-shrink: 0; position: relative; overflow: hidden; }
   .chat-avatar img { width: 100%; height: 100%; border-radius: 6px; object-fit: cover; }
   .chat-info { flex: 1; overflow: hidden; }
@@ -27,6 +28,7 @@
   .chat-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
   .chat-time { font-size: 12px; color: #aaa; }
   .chat-badge { background: #ff3b30; color: #fff; font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px; display: flex; justify-content: center; align-items: center; padding: 0 4px; }
+  .chat-badge-red-dot { width: 8px; height: 8px; background: #ff3b30; border-radius: 50%; margin-top: 4px; }
   .chat-mute { font-size: 14px; color: #b3b3b3; }
   .contact-item { display: flex; align-items: center; padding: 15px; background: #fff; border-bottom: 1px solid #f0f0f0; }
   .contact-avatar { width: 40px; height: 40px; border-radius: 4px; background: #07c160; margin-right: 12px; display: flex; justify-content: center; align-items: center; color: #fff; font-weight: bold; font-size: 16px; overflow: hidden; }
@@ -42,8 +44,8 @@
   .nav-item .nav-icon { font-size: 22px; margin-bottom: 2px; }
   .chat-detail { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #ededed; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s ease; z-index: 200; }
   .chat-detail.active { transform: translateX(0); }
-  .msg-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-  .msg-row { display: flex; align-items: flex-start; }
+  .msg-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
+  .msg-row { display: flex; align-items: flex-start; margin-bottom: 15px; }
   .msg-row.left { justify-content: flex-start; }
   .msg-row.right { justify-content: flex-end; }
   .msg-avatar { width: 40px; height: 40px; border-radius: 4px; overflow: hidden; flex-shrink: 0; background: #ccc; }
@@ -66,7 +68,7 @@
   .chat-input-area input { width: 100%; padding: 10px 15px; border-radius: 6px; border: 1px solid #ddd; outline: none; font-size: 15px; }
   .moments-view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s ease; z-index: 300; }
   .moments-view.active { transform: translateX(0); }
-  .moments-header { position: relative; height: 250px; background: url('images/tanghao.jpg') center/cover no-repeat; background-color: #667eea; }
+  .moments-header { position: relative; height: 250px; background: url('images/bg.jpg') center/cover no-repeat; background-color: #667eea; }
   .moments-header .back-btn { position: absolute; top: 55px; left: 15px; color: #fff; cursor: pointer; font-size: 16px; display: flex; align-items: center; z-index: 10; text-shadow: 0 1px 3px #000; }
   .moments-header .back-btn::before { content: "‹"; font-size: 28px; margin-right: 2px; line-height: 1; }
   .moments-header .user-info { position: absolute; bottom: 20px; right: 20px; display: flex; align-items: center; color: #fff; text-shadow: 0 1px 3px #000; }
@@ -75,7 +77,7 @@
   .moment-item { display: flex; margin-bottom: 25px; }
   .moment-avatar { width: 40px; height: 40px; border-radius: 4px; background: #07c160; margin-right: 12px; display: flex; justify-content: center; align-items: center; color: #fff; font-weight: bold; flex-shrink: 0; overflow: hidden; }
   .moment-avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .moment-content { flex: 1; }
+  .moment-content { flex: 1; min-width: 0; }
   .moment-name { color: #576b95; font-weight: 600; font-size: 15px; margin-bottom: 4px; }
   .moment-text { font-size: 15px; color: #000; margin-bottom: 8px; line-height: 1.4; }
   .moment-images { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 8px; }
@@ -97,71 +99,22 @@
 <body>
 <div class="phone">
   <div class="notch"></div>
-  <div class="status-bar"><span>15:33</span><span>📶 🔋</span></div>
+  <div class="status-bar"><span>13:33</span><span>📶 🔋</span></div>
   <div class="wechat-app">
     <div class="nav-header" id="mainHeader">微信(93)</div>
     <div class="main-content">
-      <div class="tab-view active" id="tab-chats">
-        <div class="chat-item" onclick="openChat('导员')">
-          <div class="chat-avatar"><img src="images/lixun.png" alt="导员"></div>
-          <div class="chat-info">
-            <div class="chat-name">导员</div>
-            <div class="chat-msg">来我办公室一趟</div>
-          </div>
-          <div class="chat-meta">
-            <div class="chat-time">17:25</div>
-            
-            <div class="chat-mute">🔕</div>
-          </div>
-        </div>
-        <div class="chat-item" onclick="openChat('群聊（7）')">
-          <div class="chat-avatar"><img src="images/2-7-q.jpeg" alt="群聊（7）"></div>
-          <div class="chat-info">
-            <div class="chat-name">群聊（7）</div>
-            <div class="chat-msg">导员是不是司*了？</div>
-          </div>
-          <div class="chat-meta">
-            <div class="chat-time">17:28</div>
-            
-            
-          </div>
-        </div>
-        <div class="chat-item" onclick="openChat('群聊（4）')">
-          <div class="chat-avatar"><img src="" alt="群聊（4）"></div>
-          <div class="chat-info">
-            <div class="chat-name">群聊（4）</div>
-            <div class="chat-msg">刘小别：点名了</div>
-          </div>
-          <div class="chat-meta">
-            <div class="chat-time">刚刚</div>
-            
-            
-          </div>
-        </div></div>
-      <div class="tab-view" id="tab-contacts">
-        <div class="contact-item"><div class="contact-avatar"><img src="images/lixun.png" alt="导员"></div> 导员</div>
-        <div class="contact-item"><div class="contact-avatar"><img src="images/2-7-q.jpeg" alt="群聊（7）"></div> 群聊（7）</div>
-        <div class="contact-item"><div class="contact-avatar"><img src="" alt="群聊（4）"></div> 群聊（4）</div></div>
+      <div class="tab-view active" id="tab-chats"></div>
+      <div class="tab-view" id="tab-contacts"></div>
       <div class="tab-view" id="tab-discover">
-        <div class="discover-item" onclick="openMoments()">
-          <div class="discover-icon">📷</div>
-          <div class="discover-text">朋友圈</div>
-          <div class="discover-arrow">›</div>
-        </div>
+        <div class="discover-item" onclick="openMoments()"><div class="discover-icon">📷</div><div class="discover-text">朋友圈</div><div class="discover-arrow">›</div></div>
         <div class="discover-item"><div class="discover-icon">📺</div><div class="discover-text">视频号</div><div class="discover-arrow">›</div></div>
-        <div class="discover-item"><div class="discover-icon">🔍</div><div class="discover-text">扫一扫</div><div class="discover-arrow">›</div></div>
       </div>
       <div class="tab-view" id="tab-me">
         <div style="padding: 30px; text-align: center; background: #fff;">
-          <div style="width: 70px; height: 70px; border-radius: 8px; margin: 0 auto 10px; overflow: hidden;">
-            <img src="images/tanghao.jpg" alt="♟️" style="width: 100%; height: 100%; object-fit: cover;">
-          </div>
-          <div style="font-weight: bold; font-size: 18px;">♟️</div>
-          <div style="color: #888; font-size: 13px; margin-top: 5px;">微信号：gao</div>
+          <div style="width: 70px; height: 70px; border-radius: 8px; margin: 0 auto 10px; overflow: hidden;"><img src="images/dai.png" style="width: 100%; height: 100%; object-fit: cover;"></div>
+          <div style="font-weight: bold; font-size: 18px;">小魔女大爆炸</div>
+          <div style="color: #888; font-size: 13px; margin-top: 5px;">微信号：wxid_123456</div>
         </div>
-        <div class="discover-item"><div class="discover-icon">⭐</div><div class="discover-text">收藏</div><div class="discover-arrow">›</div></div>
-        <div class="discover-item"><div class="discover-icon">🖼️</div><div class="discover-text">相册</div><div class="discover-arrow">›</div></div>
-        <div class="discover-item"><div class="discover-icon">⚙️</div><div class="discover-text">设置</div><div class="discover-arrow">›</div></div>
       </div>
     </div>
     <div class="bottom-nav">
@@ -176,80 +129,41 @@
       <div class="chat-input-area"><input type="text" placeholder="输入消息..."></div>
     </div>
     <div class="moments-view" id="momentsView">
-      <div class="moments-header">
-        <div class="back-btn" onclick="closeMoments()">返回</div>
-        <div class="user-info"><span>♟️</span><img src="images/tanghao.jpg" alt="头像"></div>
-      </div>
-      <div class="moments-body">
+      <div class="back-btn" onclick="closeMoments()" style="position: absolute; top: 55px; left: 15px; z-index: 999; color: #fff; font-size: 16px; display: flex; align-items: center; text-shadow: 0 1px 3px #000; cursor: pointer;"><span style="font-size: 28px; margin-right: 2px; line-height: 1;">‹</span> 返回</div>
+      <div class="moments-body" style="padding: 0; padding-bottom: 80px;">
+        <div class="moments-header"><div class="user-info"><span>小魔女大爆炸</span><img src="images/dai.png"></div></div>
+        <div style="padding: 15px;">
         <div class="moment-item">
-          <div class="moment-avatar"><img src="" alt="♟️"></div>
+          <div class="moment-avatar"><img src="images/liufei.png" alt="1"></div>
           <div class="moment-content">
-            <div class="moment-name">♟️</div>
+            <div class="moment-name">1</div>
             <div class="moment-text">1</div>
             
-            <div class="moment-footer">
-              <span></span>
-              <span class="moment-like-btn" onclick="toggleLike(this, 'like-list-1792079583394')">❤️ 赞</span>
-            </div>
-            <div class="moments-interaction">
-              <div class="like-list" id="like-list-1792079583394"><span class="icon">❤️</span></div>
-              
-            </div>
-          </div>
-        </div>
-        <div class="moment-item">
-          <div class="moment-avatar"><img src="images/zhangjia.jpg" alt="张佳乐"></div>
-          <div class="moment-content">
-            <div class="moment-name">张佳乐</div>
-            <div class="moment-text"></div>
-            
         <div class="moment-images">
-          <img src="images/zhangjia.jpg" alt="">
+          <img src="images/liufei.png" alt="">
         </div>
             <div class="moment-footer">
               <span></span>
-              <span class="moment-like-btn" onclick="toggleLike(this, 'like-list-1792079657374')">❤️ 赞</span>
+              <span class="moment-like-btn" onclick="toggleLike(this, 'like-list-1792310085330')">❤️ 赞</span>
             </div>
             <div class="moments-interaction">
-              <div class="like-list" id="like-list-1792079657374"><span class="icon">❤️</span></div>
+              <div class="like-list" id="like-list-1792310085330"><span class="icon">❤️</span></div>
               
+        <div class="comment-list">
+          <div class="comment-item"><span class="name">楚</span><span class="content">：111</span></div><div class="comment-item"><span class="name">🍊</span><span class="content"> 回复 </span><span class="name">楚</span><span class="content">：222</span></div>
+        </div>
             </div>
           </div>
         </div></div>
+      </div>
     </div>
   </div>
 </div>
 <script>
-  const myAvatarUrl = 'images/tanghao.jpg';
-  const myNickname = '♟️';
+  const myAvatarUrl = 'images/dai.png';
+  const myNickname = '小魔女大爆炸';
   const chatData = {
-    '导员': {
-      avatar: 'images/lixun.png',
-      isGroup: false,
-      messages: [
-        { type: 'right', text: '经过认真思考，我个人这边时间协调不过来，担心没办法尽责做好工作，想申请辞去助导，相关交接我会配合<br>需要我帮你精简成一段可以直接复制粘贴的成品吗？' },
-        { type: 'time', text: '你撤回了一条消息' },
-        { type: 'left', text: '经过认真思考，我个人这边时间协调不过来，担心没办法尽责做好工作，想申请辞去助导，相关交接我会配合' },
-        { type: 'left', text: '[语音]60\'\'' },
-        { type: 'time', text: '17:25' },
-        { type: 'left', text: '来我办公室一趟' }
-      ]
-    },
-    '群聊（7）': {
-      avatar: 'images/2-7-q.jpeg',
-      isGroup: true,
-      messages: [
-        { type: 'right', text: '导员是不是司马了？' },
-        { type: 'left', sender: '孙翔', senderAvatar: 'images/sunx.jpg', text: '嗯。' }
-      ]
-    },
-    '群聊（4）': {
-      avatar: '',
-      isGroup: true,
-      messages: [
-        { type: 'left', sender: '刘小别', senderAvatar: 'images/liuixaobie.jpg', text: '点名了' }
-      ]
-    }
+    
   };
   function switchTab(tabId, title) {
     document.querySelectorAll('.tab-view').forEach(tab => tab.classList.remove('active'));
@@ -276,35 +190,23 @@
       const avatarDiv = document.createElement('div');
       avatarDiv.className = 'msg-avatar';
       const img = document.createElement('img');
-      if (msg.type === 'right') {
-        img.src = myAvatarUrl;
-      } else if (msg.senderAvatar && msg.senderAvatar.trim() !== '') {
-        img.src = msg.senderAvatar;
-      } else {
-        img.src = data.avatar;
-      }
+      if (msg.type === 'right') { img.src = myAvatarUrl; } 
+      else if (msg.senderAvatar && msg.senderAvatar.trim() !== '') { img.src = msg.senderAvatar; } 
+      else { img.src = data.avatar; }
       avatarDiv.appendChild(img);
       
       const bubbleDiv = document.createElement('div');
       if (msg.text && msg.text.includes('<img')) {
-        bubbleDiv.className = 'msg-image ' + msg.type;
-        bubbleDiv.innerHTML = msg.text;
+        bubbleDiv.className = 'msg-image ' + msg.type; bubbleDiv.innerHTML = msg.text;
       } else {
         bubbleDiv.className = 'msg ' + msg.type;
-        // 如果有 <br> 就使用 innerHTML 让换行生效
-        if (msg.text && (msg.text.includes('<br>') || msg.text.includes('<br/>'))) {
-          bubbleDiv.innerHTML = msg.text;
-        } else {
-          bubbleDiv.innerText = msg.text;
-        }
+        if (msg.text && (msg.text.includes('<br>') || msg.text.includes('<br/>'))) { bubbleDiv.innerHTML = msg.text; } 
+        else { bubbleDiv.innerText = msg.text; }
       }
-
       if (data.isGroup && msg.type === 'left' && msg.sender) {
         const senderName = document.createElement('div');
-        senderName.className = 'msg-sender-name';
-        senderName.innerText = msg.sender;
-        const wrapper = document.createElement('div');
-        wrapper.className = 'msg-content-wrapper';
+        senderName.className = 'msg-sender-name'; senderName.innerText = msg.sender;
+        const wrapper = document.createElement('div'); wrapper.className = 'msg-content-wrapper';
         wrapper.appendChild(senderName); wrapper.appendChild(bubbleDiv);
         rowDiv.appendChild(avatarDiv); rowDiv.appendChild(wrapper);
       } else {
@@ -327,7 +229,6 @@
       btn.classList.add('liked'); btn.innerText = '❤️ 取消';
       const mySpan = document.createElement('span');
       mySpan.className = 'name liked-me'; mySpan.innerText = myNickname;
-      
       const icon = list.querySelector('.icon');
       if (icon) {
         const hasOtherNames = list.querySelectorAll('.name:not(.liked-me)').length > 0;
@@ -337,9 +238,7 @@
           sep.innerText = '、'; sep.className = 'liked-me-sep';
           list.insertBefore(sep, mySpan.nextSibling);
         }
-      } else {
-        list.appendChild(mySpan);
-      }
+      } else { list.appendChild(mySpan); }
     } else {
       btn.classList.remove('liked'); btn.innerText = '❤️ 赞';
       const mySpan = list.querySelector('.liked-me');
