@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>♟️的微信</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
+  body { background: #1a1a1a; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .phone { width: 375px; height: 812px; background: #ededed; border-radius: 45px; border: 10px solid #2c2c2e; position: relative; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.9); }
+  .notch { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 140px; height: 30px; background: #000; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; z-index: 1000; }
+  .status-bar { position: absolute; top: 0; left: 0; width: 100%; padding: 15px 25px; display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; color: #000; z-index: 999; }
+  .wechat-app { width: 100%; height: 100%; display: flex; flex-direction: column; position: absolute; top: 0; left: 0; }
+  .nav-header { padding: 50px 15px 15px; background: #ededed; display: flex; justify-content: center; align-items: center; font-weight: 600; font-size: 17px; position: relative; }
+  .nav-header .back-btn { position: absolute; left: 15px; bottom: 15px; cursor: pointer; color: #000; font-size: 16px; display: flex; align-items: center; }
+  .nav-header .back-btn::before { content: "‹"; font-size: 28px; margin-right: 2px; line-height: 1; }
+  .main-content { flex: 1; overflow-y: auto; position: relative; }
+  .tab-view { display: none; height: 100%; overflow-y: auto; padding-bottom: 60px; }
+  .tab-view.active { display: block; }
+  .chat-item { display: flex; align-items: center; padding: 12px 15px; background: #ededed; border-bottom: 1px solid #e0e0e0; cursor: pointer; }
+  .chat-item:active { background: #ddd; }
+  .chat-item.pinned { background: #e2e2e2; }
+  .chat-avatar { width: 48px; height: 48px; border-radius: 6px; background: #ccc; margin-right: 12px; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 18px; font-weight: bold; flex-shrink: 0; position: relative; overflow: hidden; }
+  .chat-avatar img { width: 100%; height: 100%; border-radius: 6px; object-fit: cover; }
+  .chat-info { flex: 1; overflow: hidden; }
+  .chat-name { font-size: 16px; color: #000; margin-bottom: 4px; font-weight: 500; }
+  .chat-msg { color: #888; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .chat-time { font-size: 12px; color: #aaa; }
+  .chat-badge { background: #ff3b30; color: #fff; font-size: 11px; min-width: 18px; height: 18px; border-radius: 9px; display: flex; justify-content: center; align-items: center; padding: 0 4px; }
+  .chat-badge-red-dot { width: 8px; height: 8px; background: #ff3b30; border-radius: 50%; margin-top: 4px; }
+  .chat-mute { font-size: 14px; color: #b3b3b3; }
+  .contact-item { display: flex; align-items: center; padding: 15px; background: #fff; border-bottom: 1px solid #f0f0f0; }
+  .contact-avatar { width: 40px; height: 40px; border-radius: 4px; background: #07c160; margin-right: 12px; display: flex; justify-content: center; align-items: center; color: #fff; font-weight: bold; font-size: 16px; overflow: hidden; }
+  .contact-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .discover-item { display: flex; align-items: center; padding: 15px; background: #fff; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+  .discover-item:active { background: #f0f0f0; }
+  .discover-icon { width: 30px; height: 30px; margin-right: 12px; display: flex; justify-content: center; align-items: center; font-size: 20px; }
+  .discover-text { flex: 1; font-size: 16px; color: #000; }
+  .discover-arrow { color: #ccc; font-size: 18px; }
+  .bottom-nav { position: absolute; bottom: 0; left: 0; width: 100%; height: 60px; background: #f7f7f7; border-top: 1px solid #ddd; display: flex; justify-content: space-around; align-items: center; z-index: 100; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; color: #888; font-size: 10px; flex: 1; padding: 5px 0; position: relative; }
+  .nav-item.active { color: #07c160; }
+  .nav-item .nav-icon { font-size: 22px; margin-bottom: 2px; }
+  .chat-detail { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #ededed; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s ease; z-index: 200; }
+  .chat-detail.active { transform: translateX(0); }
+  .msg-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
+  .msg-row { display: flex; align-items: flex-start; margin-bottom: 15px; }
+  .msg-row.left { justify-content: flex-start; }
+  .msg-row.right { justify-content: flex-end; }
+  .msg-avatar { width: 40px; height: 40px; border-radius: 4px; overflow: hidden; flex-shrink: 0; background: #ccc; }
+  .msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .msg-row.left .msg-avatar { margin-right: 10px; }
+  .msg-row.right .msg-avatar { margin-left: 10px; }
+  .msg { max-width: calc(100% - 100px); padding: 10px 15px; border-radius: 6px; font-size: 15px; line-height: 1.4; word-wrap: break-word; position: relative; }
+  .msg.left { background: #fff; }
+  .msg.left::before { content: ""; position: absolute; left: -6px; top: 12px; width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-right: 6px solid #fff; }
+  .msg.right { background: #95ec69; }
+  .msg.right::after { content: ""; position: absolute; right: -6px; top: 12px; width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 6px solid #95ec69; }
+  .msg-image { max-width: 60%; margin-bottom: 10px; display: flex; align-items: flex-end; }
+  .msg-image img { max-width: 100%; border-radius: 8px; display: block; }
+  .msg-image.left { align-self: flex-start; margin-left: 10px; }
+  .msg-image.right { align-self: flex-end; margin-right: 10px; }
+  .msg-time { text-align: center; font-size: 12px; color: #b2b2b2; margin: 15px 0; width: 100%; display: block; }
+  .msg-sender-name { font-size: 12px; color: #888; margin-bottom: 4px; margin-left: 5px; display: block; }
+  .msg-content-wrapper { flex: 1; min-width: 0; display: flex; flex-direction: column; max-width: 85%; }
+  .chat-input-area { flex-shrink: 0; padding: 10px 15px; background: #f7f7f7; border-top: 1px solid #ddd; }
+  .chat-input-area input { width: 100%; padding: 10px 15px; border-radius: 6px; border: 1px solid #ddd; outline: none; font-size: 15px; }
+  .moments-view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s ease; z-index: 300; }
+  .moments-view.active { transform: translateX(0); }
+  .moments-header { position: relative; height: 250px; background: url('images/haobg.jpg') center/cover no-repeat; background-color: #667eea; }
+  .moments-header .back-btn { position: absolute; top: 55px; left: 15px; color: #fff; cursor: pointer; font-size: 16px; display: flex; align-items: center; z-index: 10; text-shadow: 0 1px 3px #000; }
+  .moments-header .back-btn::before { content: "‹"; font-size: 28px; margin-right: 2px; line-height: 1; }
+  .moments-header .user-info { position: absolute; bottom: 20px; right: 20px; display: flex; align-items: center; color: #fff; text-shadow: 0 1px 3px #000; }
+  .moments-header .user-info img { width: 60px; height: 60px; border-radius: 6px; border: 2px solid #fff; margin-left: 10px; object-fit: cover; }
+  .moments-body { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 80px; }
+  .moment-item { display: flex; margin-bottom: 25px; }
+  .moment-avatar { width: 40px; height: 40px; border-radius: 4px; background: #07c160; margin-right: 12px; display: flex; justify-content: center; align-items: center; color: #fff; font-weight: bold; flex-shrink: 0; overflow: hidden; }
+  .moment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .moment-content { flex: 1; min-width: 0; }
+  .moment-name { color: #576b95; font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+  .moment-text { font-size: 15px; color: #000; margin-bottom: 8px; line-height: 1.4; }
+  .moment-images { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 8px; }
+  .moment-images img { width: 100%; height: 100px; object-fit: cover; border-radius: 4px; }
+  .moment-footer { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #888; }
+  .moment-like-btn { cursor: pointer; color: #576b95; }
+  .moments-interaction { background: #f7f7f7; border-radius: 4px; padding: 8px 10px; margin-top: 8px; font-size: 13px; position: relative; }
+  .moments-interaction::before { content: ""; position: absolute; top: -6px; left: 15px; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #f7f7f7; }
+  .like-list { color: #576b95; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-bottom: 6px; }
+  .like-list .icon { color: #576b95; margin-right: 4px; font-size: 14px; }
+  .like-list .name { color: #576b95; font-weight: 600; }
+  .comment-list { border-top: 1px solid #e5e5e5; padding-top: 6px; }
+  .comment-item { margin-bottom: 4px; line-height: 1.4; }
+  .comment-item:last-child { margin-bottom: 0; }
+  .comment-item .name { color: #576b95; font-weight: 600; }
+  .comment-item .content { color: #333; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="notch"></div>
+  <div class="status-bar"><span>18:57</span><span>📶 🔋</span></div>
+  <div class="wechat-app">
+    <div class="nav-header" id="mainHeader">微信(93)</div>
+    <div class="main-content">
+      <div class="tab-view active" id="tab-chats">
+        <div class="chat-item " onclick="openChat('群聊（7）')">
+          <div class="chat-avatar"><img src="images/77q2.jpeg" alt="群聊（7）"></div>
+          <div class="chat-info">
+            <div class="chat-name">群聊（7）</div>
+            <div class="chat-msg">导员是不是司＊了？</div>
+          </div>
+          <div class="chat-meta">
+            <div class="chat-time">18:57</div>
+            
+            
+          </div>
+        </div>
+        <div class="chat-item " onclick="openChat('导员')">
+          <div class="chat-avatar"><img src="images/haodao.jpg" alt="导员"></div>
+          <div class="chat-info">
+            <div class="chat-name">导员</div>
+            <div class="chat-msg">明天早上来我办公室一趟</div>
+          </div>
+          <div class="chat-meta">
+            <div class="chat-time">18:50</div>
+            <div class="chat-badge-red-dot"></div>
+            <div class="chat-mute">🔕</div>
+          </div>
+        </div>
+        <div class="chat-item " onclick="openChat('群聊（4）')">
+          <div class="chat-avatar"><img src="images/77q.jpeg" alt="群聊（4）"></div>
+          <div class="chat-info">
+            <div class="chat-name">群聊（4）</div>
+            <div class="chat-msg">刘小别：点名了</div>
+          </div>
+          <div class="chat-meta">
+            <div class="chat-time">18:37</div>
+            <div class="chat-badge">1</div>
+            
+          </div>
+        </div>
+        <div class="chat-item " onclick="openChat('22级生工1班张佳乐224')">
+          <div class="chat-avatar"><img src="images/zhangjia.jpg" alt="22级生工1班张佳乐224"></div>
+          <div class="chat-info">
+            <div class="chat-name">22级生工1班张佳乐224</div>
+            <div class="chat-msg">真没用出去别说是我教的</div>
+          </div>
+          <div class="chat-meta">
+            <div class="chat-time">18:47</div>
+            
+            
+          </div>
+        </div>
+        <div class="chat-item " onclick="openChat('林')">
+          <div class="chat-avatar"><img src="images/lin.png" alt="林"></div>
+          <div class="chat-info">
+            <div class="chat-name">林</div>
+            <div class="chat-msg">人呢？</div>
+          </div>
+          <div class="chat-meta">
+            <div class="chat-time">18:36</div>
+            
+            
+          </div>
+        </div>
+        <div class="chat-item " onclick="openChat('赵禹哲')">
+          <div class="chat-avatar"><img src="images/zhaoyuzhe.png" alt="赵禹哲"></div>
+          <div class="chat-info">
+            <div class="chat-name">赵禹哲</div>
+            <div class="chat-msg">哥今晚几点</div>
+          </div>
+          <div class="chat-meta">
+            <div class="chat-time">16:55</div>
+            
+            
+          </div>
+        </div></div>
+      <div class="tab-view" id="tab-contacts">
+        <div class="contact-item"><div class="contact-avatar"><img src="images/77q2.jpeg" alt="群聊（7）"></div> 群聊（7）</div>
+        <div class="contact-item"><div class="contact-avatar"><img src="images/haodao.jpg" alt="导员"></div> 导员</div>
+        <div class="contact-item"><div class="contact-avatar"><img src="images/77q.jpeg" alt="群聊（4）"></div> 群聊（4）</div>
+        <div class="contact-item"><div class="contact-avatar"><img src="images/zhangjia.jpg" alt="22级生工1班张佳乐224"></div> 22级生工1班张佳乐224</div>
+        <div class="contact-item"><div class="contact-avatar"><img src="images/lin.png" alt="林"></div> 林</div>
+        <div class="contact-item"><div class="contact-avatar"><img src="images/zhaoyuzhe.png" alt="赵禹哲"></div> 赵禹哲</div></div>
+      <div class="tab-view" id="tab-discover">
+        <div class="discover-item" onclick="openMoments()"><div class="discover-icon">📷</div><div class="discover-text">朋友圈</div><div class="discover-arrow">›</div></div>
+        <div class="discover-item"><div class="discover-icon">📺</div><div class="discover-text">视频号</div><div class="discover-arrow">›</div></div>
+      </div>
+      <div class="tab-view" id="tab-me">
+        <div style="padding: 30px; text-align: center; background: #fff;">
+          <div style="width: 70px; height: 70px; border-radius: 8px; margin: 0 auto 10px; overflow: hidden;"><img src="images/tanghao.jpg" style="width: 100%; height: 100%; object-fit: cover;"></div>
+          <div style="font-weight: bold; font-size: 18px;">♟️</div>
+          <div style="color: #888; font-size: 13px; margin-top: 5px;">微信号：strike_t0</div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="switchTab('tab-chats', '微信(93)')"><span class="nav-icon">💬</span>微信</div>
+      <div class="nav-item" onclick="switchTab('tab-contacts', '通讯录')"><span class="nav-icon">👥</span>通讯录</div>
+      <div class="nav-item" onclick="switchTab('tab-discover', '发现')"><span class="nav-icon">🧭</span>发现</div>
+      <div class="nav-item" onclick="switchTab('tab-me', '我')"><span class="nav-icon">👤</span>我</div>
+    </div>
+    <div class="chat-detail" id="chatDetail">
+      <div class="nav-header"><div class="back-btn" onclick="closeChat()">返回</div><span id="chatTitle">聊天</span></div>
+      <div class="msg-area" id="msgArea"></div>
+      <div class="chat-input-area"><input type="text" placeholder="输入消息..."></div>
+    </div>
+    <div class="moments-view" id="momentsView">
+      <div class="back-btn" onclick="closeMoments()" style="position: absolute; top: 55px; left: 15px; z-index: 999; color: #fff; font-size: 16px; display: flex; align-items: center; text-shadow: 0 1px 3px #000; cursor: pointer;"><span style="font-size: 28px; margin-right: 2px; line-height: 1;">‹</span> 返回</div>
+      <div class="moments-body" style="padding: 0; padding-bottom: 80px;">
+        <div class="moments-header"><div class="user-info"><span>♟️</span><img src="images/tanghao.jpg"></div></div>
+        <div style="padding: 15px;">
+        <div class="moment-item">
+          <div class="moment-avatar"><img src="images/fangrui1.png" alt="方锐"></div>
+          <div class="moment-content">
+            <div class="moment-name">方锐</div>
+            <div class="moment-text">回家一趟把马桶盖子整碎了。。。</div>
+            
+        <div class="moment-images">
+          <img src="images/matong.jpg" alt="">
+        </div>
+            <div class="moment-footer">
+              <span>刚刚</span>
+              <span class="moment-like-btn" onclick="toggleLike(this, 'like-list-1792331605828')">❤️ 赞</span>
+            </div>
+            <div class="moments-interaction">
+              <div class="like-list" id="like-list-1792331605828"><span class="icon">❤️</span><span class="name">♟️（他一定会赞。）</span></div>
+              
+        <div class="comment-list">
+          <div class="comment-item"><span class="name">方锐</span><span class="content">：这个家已经留不住我了。。。。</span></div>
+        </div>
+            </div>
+          </div>
+        </div>
+        <div class="moment-item">
+          <div class="moment-avatar"><img src="images/tanghao.jpg" alt="♟️"></div>
+          <div class="moment-content">
+            <div class="moment-name">♟️</div>
+            <div class="moment-text">八字弱的看完我手机直接去享福了</div>
+            
+            <div class="moment-footer">
+              <span>6分钟前</span>
+              <span class="moment-like-btn" onclick="toggleLike(this, 'like-list-1792333913932')">❤️ 赞</span>
+            </div>
+            <div class="moments-interaction">
+              <div class="like-list" id="like-list-1792333913932"><span class="icon">❤️</span><span class="name">22级生工1班张佳乐224</span>、<span class="name">戴妍琦</span></div>
+              
+        <div class="comment-list">
+          <div class="comment-item"><span class="name">22级生工1班张佳乐224</span><span class="content">：怎么不运动了 好陌生</span></div><div class="comment-item"><span class="name">♟️</span><span class="content"> 回复 </span><span class="name">生工1班张佳乐224</span><span class="content">：还活着就不错了</span></div><div class="comment-item"><span class="name">生工1班张佳乐224</span><span class="content"> 回复 </span><span class="name">♟️</span><span class="content">：我以为你是高精力👯</span></div><div class="comment-item"><span class="name">♟️</span><span class="content">：大哥你是不是忘记屏蔽我了</span></div><div class="comment-item"><span class="name">儿子</span><span class="content">：八字弱的人还挺幸运的</span></div><div class="comment-item"><span class="name">♟️</span><span class="content"> 回复 </span><span class="name">儿子</span><span class="content">：你还好意思讲</span></div><div class="comment-item"><span class="name">戴妍琦</span><span class="content">：我也时常有这种感觉。</span></div>
+        </div>
+            </div>
+          </div>
+        </div>
+        <div class="moment-item">
+          <div class="moment-avatar"><img src="" alt="导员"></div>
+          <div class="moment-content">
+            <div class="moment-name">导员</div>
+            <div class="moment-text">我真是不懂现在的小孩了。。。</div>
+            
+            <div class="moment-footer">
+              <span>10分钟前</span>
+              <span class="moment-like-btn" onclick="toggleLike(this, 'like-list-1792334716835')">❤️ 赞</span>
+            </div>
+            <div class="moments-interaction">
+              <div class="like-list" id="like-list-1792334716835"><span class="icon">❤️</span></div>
+              
+            </div>
+          </div>
+        </div>
+        <div class="moment-item">
+          <div class="moment-avatar"><img src="images/sunx.jpg" alt="儿子"></div>
+          <div class="moment-content">
+            <div class="moment-name">儿子</div>
+            <div class="moment-text">一次性攒12集海贼王，爽！</div>
+            
+            <div class="moment-footer">
+              <span>56分钟前</span>
+              <span class="moment-like-btn" onclick="toggleLike(this, 'like-list-1792334733765')">❤️ 赞</span>
+            </div>
+            <div class="moments-interaction">
+              <div class="like-list" id="like-list-1792334733765"><span class="icon">❤️</span><span class="name">林枫</span>、<span class="name">刘小别</span>、<span class="name">戴妍琦</span></div>
+              
+        <div class="comment-list">
+          <div class="comment-item"><span class="name">儿子</span><span class="content">：怎么就要停更了😭</span></div><div class="comment-item"><span class="name">林枫</span><span class="content">：爱我。。别走。。。</span></div><div class="comment-item"><span class="name">儿子</span><span class="content"> 回复 </span><span class="name">林枫</span><span class="content">：如果你说 你不爱我。。。</span></div><div class="comment-item"><span class="name">袁柏清</span><span class="content"> 回复 </span><span class="name">儿子</span><span class="content">：我滴妈呀 99</span></div><div class="comment-item"><span class="name">儿子</span><span class="content"> 回复 </span><span class="name">袁柏清</span><span class="content">：😓</span></div><div class="comment-item"><span class="name">刘小别</span><span class="content">：海直</span></div><div class="comment-item"><span class="name">儿子</span><span class="content"> 回复 </span><span class="name">刘小别</span><span class="content">：海湾</span></div><div class="comment-item"><span class="name">戴妍琦</span><span class="content">：评论区比更新的好看</span></div><div class="comment-item"><span class="name">儿子</span><span class="content"> 回复 </span><span class="name">戴妍琦</span><span class="content">：我这下真的要考考你了。</span></div>
+        </div>
+            </div>
+          </div>
+        </div>
+        <div class="moment-item">
+          <div class="moment-avatar"><img src="images/liuixaobie.jpg" alt="刘小别"></div>
+          <div class="moment-content">
+            <div class="moment-name">刘小别</div>
+            <div class="moment-text">喵喵喵</div>
+            
+        <div class="moment-images">
+          <img src="images/fan.png" alt="">
+        </div>
+            <div class="moment-footer">
+              <span>1小时前</span>
+              <span class="moment-like-btn" onclick="toggleLike(this, 'like-list-1792334850505')">❤️ 赞</span>
+            </div>
+            <div class="moments-interaction">
+              <div class="like-list" id="like-list-1792334850505"><span class="icon">❤️</span><span class="name">袁柏清</span>、<span class="name">徐景熙</span>、<span class="name">儿子</span></div>
+              
+        <div class="comment-list">
+          <div class="comment-item"><span class="name">儿子</span><span class="content">：图书馆一下午就看这个！</span></div>
+        </div>
+            </div>
+          </div>
+        </div>
+        <div class="moment-item">
+          <div class="moment-avatar"><img src="images/yuanboqing.png" alt="袁柏清"></div>
+          <div class="moment-content">
+            <div class="moment-name">袁柏清</div>
+            <div class="moment-text">风和日丽☀️</div>
+            
+        <div class="moment-images">
+          <img src="images/jykw.png" alt=""><img src="images/mao.png" alt="">
+        </div>
+            <div class="moment-footer">
+              <span>2小时前</span>
+              <span class="moment-like-btn" onclick="toggleLike(this, 'like-list-1792334885063')">❤️ 赞</span>
+            </div>
+            <div class="moments-interaction">
+              <div class="like-list" id="like-list-1792334885063"><span class="icon">❤️</span><span class="name">王杰希</span>、<span class="name">22级生工1班张佳乐224</span>、<span class="name">儿子</span></div>
+              
+        <div class="comment-list">
+          <div class="comment-item"><span class="name">刘小别</span><span class="content">：诶，云朵？哒哒哒哒哒，好想玩原神，云原神！</span></div><div class="comment-item"><span class="name">袁柏清</span><span class="content"> 回复 </span><span class="name">刘小别</span><span class="content">：魔了</span></div><div class="comment-item"><span class="name">袁柏清</span><span class="content">：亲们不用再关心我了，主打一个心态好😄</span></div><div class="comment-item"><span class="name">22级生工1班张佳乐224</span><span class="content"> 回复 </span><span class="name">袁柏清</span><span class="content">：颇有我当年风范</span></div><div class="comment-item"><span class="name">唐昊</span><span class="content"> 回复 </span><span class="name">袁柏清</span><span class="content">：0人关心</span></div><div class="comment-item"><span class="name">儿子</span><span class="content"> 回复 </span><span class="name">袁柏清</span><span class="content">：逃个课逃得全世界都知道了！</span></div>
+        </div>
+            </div>
+          </div>
+        </div>
+        <div class="moment-item">
+          <div class="moment-avatar"><img src="" alt="喻文州"></div>
+          <div class="moment-content">
+            <div class="moment-name">喻文州</div>
+            <div class="moment-text"></div>
+            
+        <div class="moment-images">
+          <img src="images/kewen.jpg" alt="">
+        </div>
+            <div class="moment-footer">
+              <span>2小时前</span>
+              <span class="moment-like-btn" onclick="toggleLike(this, 'like-list-1792334956617')">❤️ 赞</span>
+            </div>
+            <div class="moments-interaction">
+              <div class="like-list" id="like-list-1792334956617"><span class="icon">❤️</span><span class="name">苏沐橙</span>、<span class="name">楚云秀</span>、<span class="name">黄少天</span>、<span class="name">叶修</span>、<span class="name">王杰希</span>、<span class="name">林</span>、<span class="name">李轩</span>、<span class="name">张新杰</span>、<span class="name">徐景熙</span>、<span class="name">小远</span>、<span class="name">22级生工1班张佳乐224</span></div>
+              
+            </div>
+          </div>
+        </div>
+        <div class="moment-item">
+          <div class="moment-avatar"><img src="images/fangrui1.png" alt="方锐"></div>
+          <div class="moment-content">
+            <div class="moment-name">方锐</div>
+            <div class="moment-text">gogogo回家咯</div>
+            
+            <div class="moment-footer">
+              <span>3小时前</span>
+              <span class="moment-like-btn" onclick="toggleLike(this, 'like-list-1792334984997')">❤️ 赞</span>
+            </div>
+            <div class="moments-interaction">
+              <div class="like-list" id="like-list-1792334984997"><span class="icon">❤️</span><span class="name">林</span>、<span class="name">李迅</span>、<span class="name">周泽楷</span>、<span class="name">吴羽策</span>、<span class="name">黄少天</span></div>
+              
+        <div class="comment-list">
+          <div class="comment-item"><span class="name">22级生工1班张佳乐224</span><span class="content">：凭什么凭什么凭什么你就回家了，而我还坐在教室上这个死重修课😭</span></div><div class="comment-item"><span class="name">方锐</span><span class="content"> 回复 </span><span class="name">22级生工1班张佳乐224</span><span class="content">：学长不哭</span></div><div class="comment-item"><span class="name">22级生工1班张佳乐224</span><span class="content"> 回复 </span><span class="name">方锐</span><span class="content">：你真的是有点应付。</span></div><div class="comment-item"><span class="name">♟️</span><span class="content">：看着你这么爽我真是有点闹心</span></div><div class="comment-item"><span class="name">方锐</span><span class="content"> 回复 </span><span class="name">♟️</span><span class="content">：孩子，你就不要和大三比了，那句话怎么说来着，小偷是比较幸福的</span></div><div class="comment-item"><span class="name">林</span><span class="content"> 回复 </span><span class="name">方锐</span><span class="content">：比较是偷走幸福的小偷</span></div><div class="comment-item"><span class="name">方锐</span><span class="content"> 回复 </span><span class="name">林</span><span class="content">：我去小偷过得真爽！</span></div><div class="comment-item"><span class="name">李迅</span><span class="content">：你啥时候回家的？我以为你在宿舍睡着了，都不敢出声音</span></div><div class="comment-item"><span class="name">方锐</span><span class="content"> 回复 </span><span class="name">李迅</span><span class="content">：小哥哥你也是神了</span></div>
+        </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  const myAvatarUrl = 'images/tanghao.jpg';
+  const myNickname = '♟️';
+  const chatData = {
+    '群聊（7）': {
+      avatar: 'images/77q2.jpeg',
+      isGroup: true,
+      messages: [
+        { type: 'time', text: '9月2日 14:50' },
+        { type: 'right', text: '林敬言不是毕业了吗为什么还会出现在这个学校里' },
+        { type: 'left', sender: '刘小别', senderAvatar: 'images/liuixaobie.jpg', text: '好关心你超爱' },
+        { type: 'left', sender: '小远', senderAvatar: 'images/xiaoyuan.png', text: '乐哥给我说他有个室友行政保研了' },
+        { type: 'left', sender: '小远', senderAvatar: 'images/xiaoyuan.png', text: '该不会就是……' },
+        { type: 'left', sender: '袁柏清', senderAvatar: 'images/yuanboqing.png', text: '看样子肯定是了' },
+        { type: 'left', sender: '袁柏清', senderAvatar: 'images/yuanboqing.png', text: '不然他们中还有谁能保研。' },
+        { type: 'left', sender: '袁柏清', senderAvatar: 'images/yuanboqing.png', text: '咋了他不会是你院大一的导员吧' },
+        { type: 'time', text: '9月2日 14:57' },
+        { type: 'left', sender: '刘小别', senderAvatar: 'images/liuixaobie.jpg', text: '昊子又不说话了' },
+        { type: 'left', sender: '儿子', senderAvatar: 'images/sunx.jpg', text: '急' },
+        { type: 'left', sender: '林枫', senderAvatar: 'images/linfeng.png', text: '戳中痛处破防中' },
+        { type: 'left', sender: '儿子', senderAvatar: 'images/sunx.jpg', text: '牛逼二十分之一的概率都中了' },
+        { type: 'time', text: '9月4日 16:27' },
+        { type: 'right', text: '导员是不是死老爸了' },
+        { type: 'left', sender: '儿子', senderAvatar: 'images/sunx.jpg', text: '教务处的先死' },
+        { type: 'left', sender: '小远', senderAvatar: 'images/xiaoyuan.png', text: '怎么了' },
+        { type: 'right', text: '给他辞个职还唧唧歪歪的' },
+        { type: 'right', text: '还尼玛扯大一的事情扯扯扯 扯一大堆' },
+        { type: 'right', text: '我当时一进去部长喻文州会长王杰希不跑路诗人？' },
+        { type: 'left', sender: '儿子', senderAvatar: 'images/sunx.jpg', text: '我昊依旧冷处理中' },
+        { type: 'left', sender: '林枫', senderAvatar: 'images/linfeng.png', text: '拖着不写退部申请书自然就退出啦' },
+        { type: 'left', sender: '袁柏清', senderAvatar: 'images/yuanboqing.png', text: '所以你又没回你导员啊' },
+        { type: 'right', text: '肯定没回啊' },
+        { type: 'left', sender: '林枫', senderAvatar: 'images/linfeng.png', text: '加油据我所知他现在已经默认你参加了' },
+        { type: 'left', sender: '袁柏清', senderAvatar: 'images/yuanboqing.png', text: '据我所知你现在就可以把好友加回来了。' },
+        { type: 'time', text: '18:57' },
+        { type: 'right', text: '导员是不是司马了？' },
+        { type: 'left', sender: '儿子', senderAvatar: 'images/sunx.jpg', text: '嗯。' },
+        { type: 'left', sender: '刘小别', senderAvatar: 'images/liuixaobie.jpg', text: '你又。' }
+      ]
+    },
+    '导员': {
+      avatar: 'images/haodao.jpg',
+      isGroup: false,
+      messages: [
+        { type: 'time', text: '9月4日 15:27' },
+        { type: 'right', text: '为什么文学院的会跑来当机械院的导员啊' },
+        { type: 'time', text: '你撤回了一条消息' },
+        { type: 'right', text: '哥刚毕业的这届的导员王老师是退休了吗' },
+        { type: 'left', text: '9月4日 16:18' },
+        { type: 'left', text: '[语音]60\'\'' },
+        { type: 'left', text: '嗯，对，王老师他年纪大了【中间省略很多废话】然后小林呢是今年的研1啊顺便呢就接了王老师的班了，担任这个啊，新大一的辅导员，你们这些班助导就主要和他对接，回头我再开个会说这事' },
+        { type: 'right', text: '真尼玛想辞职' },
+        { type: 'time', text: '你撤回了一条消息' },
+        { type: 'right', text: 'ok' },
+        { type: 'time', text: '9月4日 16:26' },
+        { type: 'right', text: '经过认真思考，我个人这边时间协调不过来，担心没办法尽责做好工作，想申请辞去助导，相关交接我会配合<br>需要我帮你精简成一段可以直接复制粘贴的成品吗？' },
+        { type: 'time', text: '你撤回了一条消息' },
+        { type: 'right', text: '哥我想了一下我个人这边时间协调不过来，担心没办法尽责做好工作，想申请辞去助导狗工作，相关交接我会配合' },
+        { type: 'left', text: '[语音]60\'\'' },
+        { type: 'left', text: '唐昊啊这不是我说你啊，你之前刚加入学生会的时候也就去年吧，你刚加没多久，你就说你要退出来呀，然后那个学生会退出的都要写3000字退部申请的。还不是我去帮你周旋的，你说是不是，啊，然后刚干这个助导没个一周你又撂子不干了，你这个人不可以这样子的【然后省略很多废话】' },
+        { type: 'time', text: '9月4日 16:40' },
+        { type: 'left', text: '你到底知道不知道' },
+        { type: 'time', text: '9月4日 16:56' },
+        { type: 'left', text: '群拉你了，记得按时汇报工作' },
+        { type: 'time', text: '18:50' },
+        { type: 'left', text: '明天早上来我办公室一趟' }
+      ]
+    },
+    '群聊（4）': {
+      avatar: 'images/77q.jpeg',
+      isGroup: true,
+      messages: [
+        { type: 'time', text: '15:33' },
+        { type: 'left', sender: '刘小别', senderAvatar: 'images/liuixaobie.jpg', text: '今晚选修课你们去上不？' },
+        { type: 'right', text: '你就爱上呗' },
+        { type: 'right', text: '就那么爱上' },
+        { type: 'left', sender: '刘小别', senderAvatar: 'images/liuixaobie.jpg', text: '不是' },
+        { type: 'left', sender: '儿子', senderAvatar: 'images/sunx.jpg', text: '唐昊你懂什么' },
+        { type: 'left', sender: '刘小别', senderAvatar: 'images/liuixaobie.jpg', text: '我就确认一下' },
+        { type: 'left', sender: '儿子', senderAvatar: 'images/sunx.jpg', text: '我们别子好学生' },
+        { type: 'left', sender: '袁柏清', senderAvatar: 'images/yuanboqing.png', text: '👍👍👍👍👍' },
+        { type: 'right', text: '👍👍👍👍👍' },
+        { type: 'left', sender: '儿子', senderAvatar: 'images/sunx.jpg', text: '👍👍👍👍厉害' },
+        { type: 'time', text: '17:00' },
+        { type: 'left', sender: '袁柏清', senderAvatar: 'images/yuanboqing.png', text: '@刘小别' },
+        { type: 'left', sender: '袁柏清', senderAvatar: 'images/yuanboqing.png', text: '你死哪去了一下午没看见你' },
+        { type: 'right', text: '别子在图书馆 你懂什么<br>' },
+        { type: 'time', text: '18:37' },
+        { type: 'left', sender: '刘小别', senderAvatar: 'images/liuixaobie.jpg', text: '点名了' },
+        { type: 'left', sender: '刘小别', senderAvatar: 'images/liuixaobie.jpg', text: '喵' },
+        { type: 'left', sender: '儿子', senderAvatar: 'images/sunx.jpg', text: '？？？？？？' },
+        { type: 'right', text: '我操' },
+        { type: 'right', text: '脑子被炮打了？' },
+        { type: 'right', text: '天天不抓就今天抓？' },
+        { type: 'left', sender: '刘小别', senderAvatar: 'images/liuixaobie.jpg', text: '那我咋知道' },
+        { type: 'left', sender: '袁柏清', senderAvatar: 'images/yuanboqing.png', text: '<img src=\"images/buzhengqi.jpg\" style=\"max-width: 100px; border-radius: 4px;\">' },
+        { type: 'left', sender: '刘小别', senderAvatar: 'images/liuixaobie.jpg', text: '😂' },
+        { type: 'left', sender: '刘小别', senderAvatar: 'images/liuixaobie.jpg', text: '一教426' },
+        { type: 'left', sender: '刘小别', senderAvatar: 'images/liuixaobie.jpg', text: '速来' }
+      ]
+    },
+    '22级生工1班张佳乐224': {
+      avatar: 'images/zhangjia.jpg',
+      isGroup: false,
+      messages: [
+        { type: 'time', text: '18:42' },
+        { type: 'right', text: '倒霉起喝凉水都塞牙' },
+        { type: 'right', text: '葡萄酒品鉴那老头今天点名了' },
+        { type: 'right', text: '谁刺激他了' },
+        { type: 'left', text: '下午没喝美呗就点名了' },
+        { type: 'left', text: '你被抓啦？' },
+        { type: 'left', text: '真没用出去别说是我教的' },
+        { type: 'right', text: '本来也不是你教的😓' },
+        { type: 'left', text: '抓了几个啊' },
+        { type: 'right', text: '4' },
+        { type: 'left', text: '比我想象中少啊' },
+        { type: 'left', text: '我们当时可不止' },
+        { type: 'left', text: '四个都你宿舍的啊？！' },
+        { type: 'right', text: '三个我宿舍的。' }
+      ]
+    },
+    '林': {
+      avatar: 'images/lin.png',
+      isGroup: false,
+      messages: [
+        { type: 'time', text: '9月14日 18:35' },
+        { type: 'left', text: '我通过了你的朋友验证请求，现在我们可以开始聊天了' },
+        { type: 'right', text: '26级机电三班应到29人实到29人' },
+        { type: 'left', text: '👌' },
+        { type: 'time', text: '9月15日 18:31' },
+        { type: 'right', text: '26级机电三班应到29人实到28人，一人请假' },
+        { type: 'left', text: '👌' },
+        { type: 'time', text: '9月16日 18:30' },
+        { type: 'right', text: '26级机电三班应到29人实到26人，二人请假一人训练' },
+        { type: 'left', text: '👌' },
+        { type: 'time', text: '9月17日 18:29' },
+        { type: 'right', text: '26级机电三班应到29人实到27人，一人训练' },
+        { type: 'left', text: '👌' },
+        { type: 'time', text: '9月21日 18:30' },
+        { type: 'right', text: '26级机电三班应到29人实到25人' },
+        { type: 'left', text: '👌' },
+        { type: 'time', text: '9月22日 18:31' },
+        { type: 'right', text: '26级机电三班应到29人实到15人，参与招新' },
+        { type: 'left', text: '👌' },
+        { type: 'left', text: '18:31' },
+        { type: 'right', text: '26级机电三班应到29人实到15人' },
+        { type: 'left', text: '👌' },
+        { type: 'time', text: '林 撤回了一条消息' },
+        { type: 'left', text: '？' },
+        { type: 'left', text: '人呢？' }
+      ]
+    },
+    '赵禹哲': {
+      avatar: 'images/zhaoyuzhe.png',
+      isGroup: false,
+      messages: [
+        { type: 'time', text: '9月21日 15:33' },
+        { type: 'left', text: '哥今晚几点' },
+        { type: 'right', text: '7' },
+        { type: 'time', text: '9月21日 16:50' },
+        { type: 'left', text: '哥今晚几点' },
+        { type: 'right', text: '7' },
+        { type: 'left', text: '16:55' },
+        { type: 'left', text: '哥今晚？' },
+        { type: 'right', text: '恩' },
+        { type: 'time', text: '18:55' },
+        { type: 'right', text: '7.30' },
+        { type: 'right', text: '我有个选修课' },
+        { type: 'left', text: 'ok' }
+      ]
+    }
+  };
+  function switchTab(tabId, title) {
+    document.querySelectorAll('.tab-view').forEach(tab => tab.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    document.getElementById('mainHeader').innerText = title;
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    closeChat(); closeMoments();
+  }
+  function openChat(name) {
+    document.getElementById('chatTitle').innerText = name;
+    const msgArea = document.getElementById('msgArea');
+    msgArea.innerHTML = '';
+    const data = chatData[name];
+    if (!data) return;
+    data.messages.forEach(msg => {
+      if (msg.type === 'time') {
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'msg-time'; timeDiv.innerText = msg.text;
+        msgArea.appendChild(timeDiv); return;
+      }
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'msg-row ' + msg.type;
+      const avatarDiv = document.createElement('div');
+      avatarDiv.className = 'msg-avatar';
+      const img = document.createElement('img');
+      if (msg.type === 'right') { img.src = myAvatarUrl; } 
+      else if (msg.senderAvatar && msg.senderAvatar.trim() !== '') { img.src = msg.senderAvatar; } 
+      else { img.src = data.avatar; }
+      avatarDiv.appendChild(img);
+      
+      const bubbleDiv = document.createElement('div');
+      if (msg.text && msg.text.includes('<img')) {
+        bubbleDiv.className = 'msg-image ' + msg.type; bubbleDiv.innerHTML = msg.text;
+      } else {
+        bubbleDiv.className = 'msg ' + msg.type;
+        if (msg.text && (msg.text.includes('<br>') || msg.text.includes('<br/>'))) { bubbleDiv.innerHTML = msg.text; } 
+        else { bubbleDiv.innerText = msg.text; }
+      }
+      if (data.isGroup && msg.type === 'left' && msg.sender) {
+        const senderName = document.createElement('div');
+        senderName.className = 'msg-sender-name'; senderName.innerText = msg.sender;
+        const wrapper = document.createElement('div'); wrapper.className = 'msg-content-wrapper';
+        wrapper.appendChild(senderName); wrapper.appendChild(bubbleDiv);
+        rowDiv.appendChild(avatarDiv); rowDiv.appendChild(wrapper);
+      } else {
+        if (msg.type === 'left') { rowDiv.appendChild(avatarDiv); rowDiv.appendChild(bubbleDiv); }
+        else { rowDiv.appendChild(bubbleDiv); rowDiv.appendChild(avatarDiv); }
+      }
+      msgArea.appendChild(rowDiv);
+    });
+    document.getElementById('chatDetail').classList.add('active');
+    msgArea.scrollTop = msgArea.scrollHeight;
+  }
+  function closeChat() { document.getElementById('chatDetail').classList.remove('active'); }
+  function openMoments() { document.getElementById('momentsView').classList.add('active'); }
+  function closeMoments() { document.getElementById('momentsView').classList.remove('active'); }
+  
+  function toggleLike(btn, listId) {
+    const list = document.getElementById(listId);
+    const isLiked = btn.classList.contains('liked');
+    if (!isLiked) {
+      btn.classList.add('liked'); btn.innerText = '❤️ 取消';
+      const mySpan = document.createElement('span');
+      mySpan.className = 'name liked-me'; mySpan.innerText = myNickname;
+      const icon = list.querySelector('.icon');
+      if (icon) {
+        const hasOtherNames = list.querySelectorAll('.name:not(.liked-me)').length > 0;
+        list.insertBefore(mySpan, icon.nextSibling);
+        if (hasOtherNames) {
+          const sep = document.createElement('span');
+          sep.innerText = '、'; sep.className = 'liked-me-sep';
+          list.insertBefore(sep, mySpan.nextSibling);
+        }
+      } else { list.appendChild(mySpan); }
+    } else {
+      btn.classList.remove('liked'); btn.innerText = '❤️ 赞';
+      const mySpan = list.querySelector('.liked-me');
+      const sep = list.querySelector('.liked-me-sep');
+      if (mySpan) mySpan.remove(); 
+      if (sep) sep.remove();
+    }
+  }
+</script>
+</body>
+</html>
